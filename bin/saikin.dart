@@ -144,6 +144,8 @@ class Channel {
   String login;
   ChannelState state = ChannelState.connected;
   Map<String, DateTime> users = {};
+  DateTime lastRequested = DateTime.now();
+  Map<IRCMessage, DateTime> messages = {};
 
   Channel({
     required this.login,
@@ -153,6 +155,7 @@ class Channel {
 // TODO: Ratelimit onConnect's join logic
 // TODO: Cache responses
 // TODO: Ratelimit requests per IP
+// TODO: Leave channels if not requested within 24 hours
 
 Future<void> main(List<String> arguments) async {
   final channels = <String, Channel>{};
@@ -189,7 +192,9 @@ Future<void> main(List<String> arguments) async {
           if (!channels.containsKey(channelName)) break;
 
           final login = message.prefix?.split('!').first;
-          channels[channelName]!.users[login!] = DateTime.now();
+          final channel = channels[channelName]!;
+          channel.users[login!] = DateTime.now();
+          channel.messages[message] = DateTime.now();
           break;
       }
     },
@@ -197,14 +202,46 @@ Future<void> main(List<String> arguments) async {
 
   final router = shelf.Router();
 
-  router.get('/channel/<login>', (shelf.Request request, String login) {
+  router.get('/channel/history/<login>', (shelf.Request request, String login) {
     if (!channels.containsKey(login)) {
       client.join(login);
-      return shelf.Response.ok(json.encode({}));
+      return shelf.Response.ok(
+        json.encode({}),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
     }
     final channel = channels[login]!;
+    channel.lastRequested = DateTime.now();
+    channel.messages.removeWhere((key, value) => DateTime.now().isAfter(value.add(Duration(minutes: 1))));
+    return shelf.Response.ok(
+      json.encode(channels[login]!.messages.keys.map((key) => key.raw).toList()),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+  });
+
+  router.get('/channel/users/<login>', (shelf.Request request, String login) {
+    if (!channels.containsKey(login)) {
+      client.join(login);
+      return shelf.Response.ok(
+        json.encode({}),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+    }
+    final channel = channels[login]!;
+    channel.lastRequested = DateTime.now();
     channel.users.removeWhere((key, value) => DateTime.now().isAfter(value.add(Duration(minutes: 1))));
-    return shelf.Response.ok(json.encode(channels[login]!.users.map((key, value) => MapEntry(key, value.toIso8601String()))));
+    return shelf.Response.ok(
+      json.encode(channels[login]!.users.map((key, value) => MapEntry(key, value.toIso8601String()))),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
   });
 
   router.get('/user/<login>', (shelf.Request request, String login) {
