@@ -156,6 +156,7 @@ class Channel {
 // TODO: Cache responses
 // TODO: Ratelimit requests per IP
 // TODO: Leave channels if not requested within 24 hours
+// TODO: Sanitize user input
 
 Future<void> main(List<String> arguments) async {
   final channels = <String, Channel>{};
