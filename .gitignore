@@ -1,0 +1,16 @@
+# Use the gitignore as an allow list
+*
+!*/
+
+# Source files
+!bin/**/*.dart
+!lib/**/*.dart
+
+# Dart project files
+!/pubspec.yaml
+!/analysis_options.yaml
+
+# Repository files
+!/README.md
+!/LICENSE
+!/.gitignore
