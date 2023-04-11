@@ -10,6 +10,9 @@
 !/pubspec.yaml
 !/analysis_options.yaml
 
+# Docker
+!/Dockerfile
+
 # Repository files
 !/README.md
 !/LICENSE
