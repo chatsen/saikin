@@ -254,6 +254,23 @@ Future<void> main(List<String> arguments) async {
     }
     return shelf.Response.notFound('');
   });
+  
+  router.get('/channels', (shelf.Request request, String login) {
+    for (final channel in channels.entries) {
+      if (channel.value.users.containsKey(login)) {
+        return shelf.Response.ok(channel.key);
+      }
+    }
+    return shelf.Response.ok(
+        json.encode({
+          for (final channel in channels.entries)
+            channel.key: '${channel.value.state}',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+  });
 
   final server = await shelf.serve(router, '0.0.0.0', int.tryParse(Platform.environment['PORT'] ?? '7777') ?? 7777);
   print('Server started on port ${server.port}');
