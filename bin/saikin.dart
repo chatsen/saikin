@@ -196,7 +196,9 @@ Future<void> main(List<String> arguments) async {
           final login = message.prefix?.split('!').first;
           final channel = channels[channelName]!;
           channel.users[login!] = DateTime.now();
-          channel.messages[message] = DateTime.now();
+          channel.users.removeWhere((key, value) => DateTime.now().isAfter(value.add(Duration(minutes: 60))));
+          // channel.messages[message] = DateTime.now();
+          // channel.messages.removeWhere((key, value) => DateTime.now().isAfter(value.add(Duration(minutes: 60))));
           break;
       }
     },
@@ -216,7 +218,7 @@ Future<void> main(List<String> arguments) async {
     }
     final channel = channels[login]!;
     channel.lastRequested = DateTime.now();
-    channel.messages.removeWhere((key, value) => DateTime.now().isAfter(value.add(Duration(minutes: 1))));
+    channel.messages.removeWhere((key, value) => DateTime.now().isAfter(value.add(Duration(minutes: 60))));
     return shelf.Response.ok(
       json.encode(channels[login]!.messages.keys.map((key) => key.raw).toList()),
       headers: {
@@ -237,7 +239,7 @@ Future<void> main(List<String> arguments) async {
     }
     final channel = channels[login]!;
     channel.lastRequested = DateTime.now();
-    channel.users.removeWhere((key, value) => DateTime.now().isAfter(value.add(Duration(minutes: 1))));
+    channel.users.removeWhere((key, value) => DateTime.now().isAfter(value.add(Duration(minutes: 60))));
     return shelf.Response.ok(
       json.encode(channels[login]!.users.map((key, value) => MapEntry(key, value.toIso8601String()))),
       headers: {
@@ -254,7 +256,7 @@ Future<void> main(List<String> arguments) async {
     }
     return shelf.Response.notFound('');
   });
-  
+
   router.get('/channels', (shelf.Request request) {
     return shelf.Response.ok(
         json.encode({
