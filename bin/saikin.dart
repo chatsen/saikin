@@ -255,12 +255,7 @@ Future<void> main(List<String> arguments) async {
     return shelf.Response.notFound('');
   });
   
-  router.get('/channels', (shelf.Request request, String login) {
-    for (final channel in channels.entries) {
-      if (channel.value.users.containsKey(login)) {
-        return shelf.Response.ok(channel.key);
-      }
-    }
+  router.get('/channels', (shelf.Request request) {
     return shelf.Response.ok(
         json.encode({
           for (final channel in channels.entries)
