@@ -6,6 +6,7 @@ import 'package:shelf_router/shelf_router.dart' as shelf;
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf;
 import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/io.dart';
 
 class IRCMessage {
   String raw;
@@ -107,6 +108,14 @@ class TMIClient {
 
   Future<void> join(String login) async {
     send('JOIN #$login');
+
+    final ingestServerUrl = Platform.environment['URI'];
+    if (ingestServerUrl != null) {
+      final channel = IOWebSocketChannel.connect(ingestServerUrl);
+      channel.sink.add('join:hi');
+      await channel.sink.done;
+      await channel.sink.close();
+    }
   }
 
   Future<void> part(String login) async {
@@ -259,14 +268,13 @@ Future<void> main(List<String> arguments) async {
 
   router.get('/channels', (shelf.Request request) {
     return shelf.Response.ok(
-        json.encode({
-          for (final channel in channels.entries)
-            channel.key: '${channel.value.state}',
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
+      json.encode({
+        for (final channel in channels.entries) channel.key: '${channel.value.state}',
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
   });
 
   final server = await shelf.serve(router, '0.0.0.0', int.tryParse(Platform.environment['PORT'] ?? '7777') ?? 7777);
