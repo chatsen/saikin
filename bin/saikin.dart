@@ -109,7 +109,7 @@ class TMIClient {
   Future<void> join(String login) async {
     send('JOIN #$login');
 
-    final ingestServerUrl = Platform.environment['URI'];
+    final ingestServerUrl = Platform.environment['DEKKAI'];
     if (ingestServerUrl != null) {
       final channel = IOWebSocketChannel.connect(ingestServerUrl);
       channel.sink.add('join:${login.toLowerCase()}');
