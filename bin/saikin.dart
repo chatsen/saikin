@@ -112,7 +112,7 @@ class TMIClient {
     final ingestServerUrl = Platform.environment['URI'];
     if (ingestServerUrl != null) {
       final channel = IOWebSocketChannel.connect(ingestServerUrl);
-      channel.sink.add('join:hi');
+      channel.sink.add('join:${login.toLowerCase()}');
       await channel.sink.done;
       await channel.sink.close();
     }
