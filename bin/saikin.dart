@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -79,6 +80,9 @@ class TMIClient {
   Function(TMIClient self)? onDisconnect;
   Function(TMIClient self, IRCMessage message)? onEvent;
 
+  WebSocket? ingestSocket;
+  Timer? ingestPingTimer;
+
   Future<void> connect() async {
     socket = await WebSocket.connect('wss://irc-ws.chat.twitch.tv:443');
 
@@ -104,17 +108,21 @@ class TMIClient {
 
     send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
     send('NICK justinfan6969');
+
+    final ingestServerUrl = Platform.environment['DEKKAI'];
+    if (ingestServerUrl != null) {
+      ingestSocket = await WebSocket.connect(ingestServerUrl);
+      if (ingestSocket != null) print('Connected to ingest server.');
+      ingestPingTimer = Timer.periodic(Duration(seconds: 60), (timer) {
+        ingestSocket?.add('ping:saikin');
+      });
+    }
   }
 
   Future<void> join(String login) async {
     send('JOIN #$login');
-
-    final ingestServerUrl = Platform.environment['DEKKAI'];
-    if (ingestServerUrl != null) {
-      final channel = IOWebSocketChannel.connect(ingestServerUrl);
-      channel.sink.add('join:${login.toLowerCase()}');
-      await channel.sink.done;
-      await channel.sink.close();
+    if (ingestSocket != null) {
+      ingestSocket?.add('join:${login.toLowerCase()}');
     }
   }
 
